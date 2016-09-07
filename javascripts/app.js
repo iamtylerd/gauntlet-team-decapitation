@@ -17,7 +17,8 @@ $(document).ready(function(){
 }); 
 
 DomManip.disableBtns();
-DomManip.raceClick();
+DomManip.humanClick();
+DomManip.elfClick();
 DomManip.warriorEquipmentClick();
 DomManip.mageEquipmentClick();
 DomManip.archerEquipmentClick();
@@ -38,6 +39,7 @@ function buildExtraWeapon () {
  		buildEnemy ();
 		Templates.heroTemplate(NewHero);
 		Templates.enemyTemplate(NewEnemy);
+		console.log(NewHero.race);
  	})
  }
  buildExtraWeapon();
@@ -142,7 +144,7 @@ function buildShield () {
  buildProtectionSpell();
 
 function addFightButton () {
-  $("#hiddenbtn").removeClass();
+  $("#hiddenbtn").removeClass('hidebtn');
   $("#hiddenbtn").click(function() {
     fight();
   })  
@@ -153,6 +155,7 @@ function buildEnemy () {
   determineEnemy=Math.floor(Math.random() * (4) + 1);
 	if (counter === 3) {
 		NewEnemy = new ClassesModule.Ice();
+    console.log("boss");
 	}  
   	else if (determineEnemy === 2) {
     	NewEnemy = new EquipmentModule.PotionOfProtection();
@@ -167,37 +170,84 @@ function buildEnemy () {
     	NewEnemy = new EquipmentModule.DoubleDagger();
     	counter ++;
   }
-  console.log(counter);
 }
 
 
 function fight () {
-    NewEnemy.health = NewEnemy.health - NewHero.attack;
+    heroCritRoll(NewHero);
     Templates.enemyTemplate(NewEnemy);
-    if (NewEnemy.health < 1) {
-      alert("Enemy is dead");
-      alert("Next Wave");
-      NewHero.health = resetHealth;
-      Templates.heroTemplate(NewHero);
+    if (NewEnemy.boss === true && NewEnemy.health <1) {
+      NewEnemy.health = 0;
+      Templates.enemyTemplate(NewEnemy);
+    	setTimeout(function(){$('.enemyPic').prop('src', `${NewEnemy.dead}`)}, 15);
+    	setTimeout(function(){
+      		alert("You Won!");
+      		location.reload();}, 1000);
+    }
+    else if (NewEnemy.health < 1) {
+      NewEnemy.health = 0;
+      Templates.enemyTemplate(NewEnemy)
+      console.log(NewEnemy.health)
+      setTimeout(function(){$('.enemyPic').prop('src', `${NewEnemy.dead}`)}, 15);
+      setTimeout(function(){
+      	  alert("Next Wave");
+          buildEnemy(); 
+          NewHero.health = resetHealth;
+          Templates.heroTemplate(NewHero);
+          Templates.enemyTemplate(NewEnemy);}, 1000);
       console.log(NewHero.health);
       console.log(NewEnemy.name);
-      buildEnemy();
-      Templates.enemyTemplate(NewEnemy);
+      console.log(NewEnemy.boss);
+
     } else {
-      NewHero.health = NewHero.health - NewEnemy.attack;
+      enemyCritRoll(NewEnemy);
       Templates.heroTemplate(NewHero);
       if (NewHero.health < 1) {
-        alert("Hero is Dead");
-      } else { 
-        console.log("heroHealth", NewHero.health);
-        console.log("enemyHealth", NewEnemy.health);
-    } 
-  } 
+        NewHero.health = 0;
+        Templates.heroTemplate(NewHero);
+        $('.heroPic').prop('src', `${NewHero.dead}`);
+        setTimeout(function(){
+          alert("You LOST!");
+          location.reload();}, 1000);
+          } 
+        } 
+    }
+
+
+
+function heroCritRoll(hero) {
+	let critRoll = Math.floor(Math.random() * (100) + 1)
+  $('.actionLog').html("")
+	if (critRoll >= 85) {
+    NewEnemy.health = NewEnemy.health - (NewHero.attack * 1.25);
+    Templates.displayHeroAttack(NewHero);
+    $('.actionLog').html(`<p><h1>Critical hit by ${hero.name}</h1></p>`)
+	} else if (critRoll <= 15) {
+    Templates.displayHeroAttack(NewHero);
+    $('.actionLog').html(`<p><h1>${hero.name} just missed!</h1></p>`)
+	} else {
+		NewEnemy.health = NewEnemy.health - NewHero.attack;
+    Templates.displayHeroAttack(NewHero);
+	}
 }
 
-
-
-
+function enemyCritRoll(enemy) {
+	let critRoll = Math.floor(Math.random() * (100) + 1)
+   $('.actionLog').html("")
+	if (critRoll >= 85) {
+    NewHero.health = NewHero.health - (NewEnemy.attack * 1.25);
+    setTimeout(function(){
+    Templates.displayEnemyAttack(NewEnemy)}, 1000);
+    $('.actionLog').html(`<p><h1>Critical hit by ${enemy.name}</h1></p>`)
+	} else if (critRoll <= 15) {
+      NewHero.health = NewHero.health;
+    $('.actionLog').html(`<p><h1>${enemy.name} just missed!</h1></p>`)
+	} else {
+	    NewHero.health = NewHero.health - NewEnemy.attack;
+    setTimeout(function(){
+      Templates.displayEnemyAttack(NewEnemy)}, 1000);
+	}
+}
 
 
 
